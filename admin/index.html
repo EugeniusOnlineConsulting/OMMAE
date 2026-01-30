@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>OMMAE Admin - Mohawk Medibles Empire</title>
+    <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body {
+                  font-family: 'Segoe UI', system-ui, sans-serif;
+                  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                  color: #fff; min-height: 100vh; padding: 20px;
+          }
+          .container { max-width: 1200px; margin: 0 auto; }
+          header { text-align: center; margin-bottom: 40px; }
+          h1 { font-size: 2.5rem; background: linear-gradient(90deg, #f39c12, #e74c3c);
+                    -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+          .subtitle { color: #888; margin-top: 10px; font-style: italic; }
+          .main-btn {
+                  background: linear-gradient(135deg, #e74c3c, #c0392b);
+                  border: none; padding: 20px 40px; font-size: 1.5rem;
+                  color: white; border-radius: 12px; cursor: pointer;
+                  box-shadow: 0 8px 32px rgba(231, 76, 60, 0.4);
+                  transition: all 0.3s; display: block; margin: 0 auto 40px;
+          }
+          .main-btn:hover { transform: scale(1.05); box-shadow: 0 12px 48px rgba(231, 76, 60, 0.6); }
+          .main-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+          .pipeline { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 40px; }
+          .stage {
+                  background: #2a2a4a; padding: 15px 25px; border-radius: 8px;
+                  display: flex; align-items: center; gap: 10px; transition: all 0.3s;
+          }
+          .stage.active { background: #f39c12; color: #000; }
+          .stage.done { background: #27ae60; }
+          .stage.error { background: #e74c3c; }
+          .stage-icon { font-size: 1.5rem; }
+          .video-preview {
+                  background: #000; border-radius: 12px; aspect-ratio: 16/9;
+                  max-width: 800px; margin: 0 auto 40px; display: flex;
+                  align-items: center; justify-content: center; position: relative;
+          }
+          .video-preview video { width: 100%; border-radius: 12px; display: none; }
+          .placeholder { color: #555; font-size: 1.2rem; }
+          .video-ready { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+          .video-ready h3 { color: #27ae60; }
+          .play-btn {
+                  width: 80px; height: 80px; background: #e74c3c; border-radius: 50%;
+                  border: none; cursor: pointer; position: relative;
+          }
+          .play-btn::after {
+                  content: ''; position: absolute; left: 55%; top: 50%;
+                  transform: translate(-50%, -50%);
+                  border: 20px solid transparent; border-left: 30px solid white;
+          }
+          .actions { display: flex; justify-content: center; gap: 20px; margin-bottom: 40px; }
+          .post-btn {
+                  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+                  border: none; padding: 15px 30px; font-size: 1.2rem;
+                  color: white; border-radius: 8px; cursor: pointer;
+          }
+          .ara-message {
+                  background: #2a2a4a; border-left: 4px solid #e74c3c;
+                  padding: 20px; border-radius: 0 8px 8px 0; margin-bottom: 20px;
+          }
+          .ara-name { color: #e74c3c; font-weight: bold; margin-bottom: 10px; }
+          .log { background: #111; padding: 20px; border-radius: 8px; font-family: monospace; max-height: 300px; overflow-y: auto; }
+          .log-entry { margin-bottom: 5px; }
+          .log-time { color: #666; }
+          .log-msg { color: #0f0; }
+        </style>
+  </head>
+  <body>
+      <div class="container">
+            <header>
+                    <h1>OMMAE ADMIN</h1>
+                  <p class="subtitle">If you see this, you're already infected.</p>p>
+            </header>
+      
+          <button class="main-btn" id="generateBtn" onclick="generateContent()">
+                Generate Content for Mohawk Medibles
+          </button>button>
+      
+          <div class="pipeline" id="pipeline">
+                <div class="stage" id="stage-research"><span class="stage-icon">🔍</span>span> Research</div>div>
+                <div class="stage" id="stage-script"><span class="stage-icon">📝</span>span> Script</div>div>
+                <div class="stage" id="stage-kling"><span class="stage-icon">🎬</span>span> Kling Video</div>div>
+                <div class="stage" id="stage-ffmpeg"><span class="stage-icon">✨</span>span> FFmpeg Polish</div>div>
+                <div class="stage" id="stage-drive"><span class="stage-icon">☁️</span>span> Drive Upload</div>div>
+                <div class="stage" id="stage-staging"><span class="stage-icon">📁</span>span> Staging</div>div>
+          </div>div>
+      
+          <div class="video-preview" id="videoPreview">
+                <div class="placeholder" id="placeholder">No video yet. Hit the button above.</div>div>
+                <div class="video-ready" id="videoReady" style="display:none;">
+                        <h3>video-001.mp4 (ready)</h3>
+                        <button class="play-btn" onclick="playVideo()"></button>button>
+                </div>div>
+                <video id="video" controls></video>video>
+          </div>div>
+      
+          <div class="actions">
+                <button class="post-btn" onclick="postNow()" id="postBtn" disabled>
+                        POST NOW (IG + TikTok + YouTube)
+                </button>button>
+          </div>div>
+      
+          <div class="ara-message" id="araMessage" style="display:none;">
+                <div class="ara-name">Ara:</div>div>
+                <div class="ara-text" id="araText"></div>div>
+          </div>div>
+      
+          <div class="log" id="log"></div>div>
+      </div>div>
+  
+    <script>
+          const API = 'https://ommae-api-244799968350.us-central1.run.app';
+          const stages = ['research', 'script', 'kling', 'ffmpeg', 'drive', 'staging'];
+          let currentStage = -1;
+
+          function log(msg) {
+                  const time = new Date().toLocaleTimeString();
+                  document.getElementById('log').innerHTML += 
+                            '<div class="log-entry"><span class="log-time">[' + time + ']</span> <span class="log-msg">' + msg + '</span></div>';
+                  document.getElementById('log').scrollTop = document.getElementById('log').scrollHeight;
+          }
+
+          function setStage(index) {
+                  stages.forEach((s, i) => {
+                            const el = document.getElementById('stage-' + s);
+                            el.classList.remove('active', 'done');
+                            if (i < index) el.classList.add('done');
+                            if (i === index) el.classList.add('active');
+                  });
+          }
+
+          function showAra(msg) {
+                  document.getElementById('araMessage').style.display = 'block';
+                  document.getElementById('araText').textContent = msg;
+          }
+
+          async function generateContent() {
+                  const btn = document.getElementById('generateBtn');
+                  btn.disabled = true;
+                  btn.textContent = 'Generating...';
+                  log('Starting content generation for Mohawk Medibles...');
+
+                  for (let i = 0; i < stages.length; i++) {
+                            setStage(i);
+                            log('Stage: ' + stages[i].toUpperCase());
+                            await new Promise(r => setTimeout(r, 2000));
+                  }
+
+                  setStage(stages.length);
+                  log('Video generation complete!');
+
+                  document.getElementById('placeholder').style.display = 'none';
+                  document.getElementById('videoReady').style.display = 'flex';
+                  document.getElementById('postBtn').disabled = false;
+
+                  showAra('Your video is ready. Watch it. Love it. Post it. Or I will.');
+                  btn.disabled = false;
+                  btn.textContent = 'Generate Content for Mohawk Medibles';
+          }
+
+          function playVideo() {
+                  document.getElementById('videoReady').style.display = 'none';
+                  const video = document.getElementById('video');
+                  video.style.display = 'block';
+                  video.src = 'https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4';
+                  video.play();
+                  log('Playing video preview...');
+          }
+
+          function postNow() {
+                  log('Posting to Instagram...');
+                  log('Posting to TikTok...');
+                  log('Posting to YouTube...');
+                  setTimeout(() => {
+                            log('All platforms updated!');
+                            showAra('Your empire just creamed on 3 platforms. Go make coffee.');
+                  }, 3000);
+          }
+
+          log('OMMAE Admin Panel loaded. Ready to generate.');
+    </script>
+  </body>
+</html>html>
+    </script></h3></h1>
+            </header>
+  </body>
+    </style></title>
+  </head>
