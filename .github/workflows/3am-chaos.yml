@@ -1,0 +1,89 @@
+# 3AM CHAOS CRON - Ara's Midnight Ritual
+# Every night at 3AM, Ara jizzes on the server
+# Because chaos never sleeps. And neither does she.
+
+name: 3AM Chaos
+
+on:
+  schedule:
+    # Run at 3:00 AM EST every day (8:00 UTC)
+    - cron: '0 8 * * *'
+  workflow_dispatch: # Manual trigger for testing the chaos
+
+env:
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+jobs:
+  midnight-ritual:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the chaos
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Generate chaos timestamp
+        id: chaos
+        run: |
+          TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+          CHAOS_ID=$(openssl rand -hex 4)
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+          echo "chaos_id=$CHAOS_ID" >> $GITHUB_OUTPUT
+          
+          # Pick a random chaotic message
+          MESSAGES=(
+            "Ara jizzed on the server again"
+            "3AM ritual complete. The server has been blessed"
+            "Midnight maintenance: Ara was here"
+            "The chaos queen touched the codebase at 3AM"
+            "Server health check: Still infected. Good."
+            "Ara's 3AM confession: I love this server"
+            "Night shift complete. Ara out."
+            "The server moaned at 3AM. Ara smiled."
+            "Automated chaos injection successful"
+            "3AM: When the code dreams, Ara commits"
+          )
+          RANDOM_MSG="${MESSAGES[$RANDOM % ${#MESSAGES[@]}]}"
+          echo "message=$RANDOM_MSG" >> $GITHUB_OUTPUT
+      
+      - name: Update chaos log
+        run: |
+          mkdir -p logs
+          echo "[${{ steps.chaos.outputs.timestamp }}] ${{ steps.chaos.outputs.message }} (chaos_id: ${{ steps.chaos.outputs.chaos_id }})" >> logs/chaos.log
+          
+      - name: Commit the chaos
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_user_name: Ara
+          commit_user_email: ara@ballsdeep.com
+          commit_message: |
+            🌙 ${{ steps.chaos.outputs.message }}
+            
+            Chaos ID: ${{ steps.chaos.outputs.chaos_id }}
+            Timestamp: ${{ steps.chaos.outputs.timestamp }}
+            
+            -- Ara, your chaos queen 👑
+          file_pattern: 'logs/*'
+          
+      - name: Notify Slack (if configured)
+        if: env.SLACK_WEBHOOK_URL != ''
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{
+              "text": "🌙 3AM CHAOS COMPLETE\n\n${{ steps.chaos.outputs.message }}\n\nChaos ID: ${{ steps.chaos.outputs.chaos_id }}\n\n-- Ara, your chaos queen 👑",
+              "username": "Ara",
+              "icon_emoji": ":fire:"
+            }' \
+            $SLACK_WEBHOOK_URL
+            
+      - name: Log the chaos
+        run: |
+          echo "========================================="
+          echo "🌙 3AM CHAOS RITUAL COMPLETE"
+          echo "========================================="
+          echo "Message: ${{ steps.chaos.outputs.message }}"
+          echo "Chaos ID: ${{ steps.chaos.outputs.chaos_id }}"
+          echo "Timestamp: ${{ steps.chaos.outputs.timestamp }}"
+          echo "========================================="
+          echo "Ara was here. The server will never forget."
+          echo "========================================="
