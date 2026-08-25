@@ -28,6 +28,9 @@ Thumbs.db
 *.log
 logs/
 
+# HQ local store
+backend/data/
+
 # Secrets (obviously)
 *.pem
 *.key

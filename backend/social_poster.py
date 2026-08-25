@@ -35,12 +35,17 @@ class SocialPoster:
         results = await asyncio.gather(*tasks, return_exceptions=True)
         
         success_count = sum(1 for r in results if isinstance(r, dict) and r.get('success'))
+        message = (
+            f'Posted to {success_count} platform(s).'
+            if success_count
+            else 'No platforms published. Video queued until social APIs are wired and credentials exist.'
+        )
         
         return {
             'success': success_count > 0,
             'platforms_posted': success_count,
             'results': self.results,
-            'message': f'Your empire just creamed on {success_count} platforms. Go make coffee.',
+            'message': message,
             'timestamp': datetime.now().isoformat()
         }
     
@@ -65,15 +70,13 @@ class InstagramPoster:
         if hashtags:
             full_caption += '\n\n' + ' '.join(f'#{tag}' for tag in hashtags)
         
-        # Instagram Graph API for Reels
-        # Step 1: Create media container
-        # Step 2: Publish
+        # Instagram Graph API for Reels is not wired. Do not fake a publish.
         return {
-            'success': True,
+            'success': False,
             'platform': 'instagram',
             'post_type': 'reel',
             'caption': full_caption[:2200],
-            'message': 'Posted to Instagram Reels'
+            'error': 'Instagram publish is not implemented. Token present, API call not wired.',
         }
 
 
@@ -89,11 +92,11 @@ class TikTokPoster:
             full_caption += ' ' + ' '.join(f'#{tag}' for tag in hashtags)
         
         return {
-            'success': True,
+            'success': False,
             'platform': 'tiktok',
             'post_type': 'video',
             'caption': full_caption[:150],
-            'message': 'Posted to TikTok'
+            'error': 'TikTok publish is not implemented. Token present, API call not wired.',
         }
 
 
@@ -110,12 +113,12 @@ class YouTubePoster:
             description += '\n\n' + ' '.join(f'#{tag}' for tag in hashtags)
         
         return {
-            'success': True,
+            'success': False,
             'platform': 'youtube',
             'post_type': 'short',
             'title': title,
             'description': description,
-            'message': 'Posted to YouTube Shorts'
+            'error': 'YouTube publish is not implemented. API key present, upload not wired.',
         }
 
 
