@@ -16,10 +16,11 @@
         .logo { color: #00d9a5; font-size: 24px; font-weight: bold; }
         .logo span { color: #666; font-size: 14px; font-weight: normal; margin-left: 8px; }
         .header-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-        .text-input, .role-select {
+        .brand-select, .text-input, .role-select {
             background: #2d2d44; border: 1px solid #3d3d5c; color: #e0e0e0;
             padding: 8px 16px; border-radius: 6px; min-width: 180px;
         }
+        .error-box { width: 100%; min-height: 120px; background: #0a0a14; border: 1px solid #3d3d5c; color: #e0e0e0; padding: 12px; border-radius: 8px; font-family: ui-monospace, monospace; font-size: 12px; }
         .text-input::placeholder { color: #8a8aaa; }
         .text-input:focus, .role-select:focus { outline: 2px solid #00d9a5; border-color: #00d9a5; }
         .btn-primary { background: #00d9a5; color: #0f0f1a; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; }
@@ -73,9 +74,11 @@
         <div class="header-actions">
             <select class="brand-select" id="brandSelect">
                 <option value="mohawk_medibles">Mohawk Medibles</option>
+                <option value="spirit_fire">Spirit Fire Tobacco</option>
             </select>
             <button class="btn-ghost" id="leadsBtn" onclick="findLeads()">Find Leads</button>
             <button class="btn-ghost" id="tasksBtn" onclick="proposeTasks()">Propose Tasks</button>
+            <button class="btn-ghost" id="diagnoseBtn" onclick="switchTab('incidents')">Gloris</button>
             <button class="btn-primary" id="newVideoBtn" onclick="generateVideo()">+ New Video</button>
         </div>
     </header>
@@ -85,6 +88,7 @@
         <div class="tab" data-tab="approved" onclick="switchTab('approved')">Approved <span class="count" id="approvedCount">0</span></div>
         <div class="tab" data-tab="acquisition" onclick="switchTab('acquisition')">Acquisition <span class="count" id="leadCount">0</span></div>
         <div class="tab" data-tab="team" onclick="switchTab('team')">Team <span class="count" id="taskCount">0</span></div>
+        <div class="tab" data-tab="incidents" onclick="switchTab('incidents')">Incidents <span class="count" id="incidentCount">0</span></div>
         <div class="tab" data-tab="logs" onclick="switchTab('logs')">Logs</div>
     </nav>
     <main class="main"><div id="content"><div class="empty-state"><h3>Loading HQ…</h3></div></div></main>
@@ -101,6 +105,7 @@
         let roles = [];
         let tasks = [];
         let logs = [];
+        let incidents = [];
         let isGenerating = false;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -115,12 +120,13 @@
 
         async function refreshAll() {
             try {
-                const [videoData, leadData, teamData, taskData, logData] = await Promise.all([
+                const [videoData, leadData, teamData, taskData, logData, incidentData] = await Promise.all([
                     api('/videos?client=' + clientId()),
                     api('/leads?client=' + clientId()),
                     api('/team'),
                     api('/tasks'),
-                    api('/logs')
+                    api('/logs'),
+                    api('/incidents')
                 ]);
                 videos = videoData.videos || [];
                 leads = leadData.leads || [];
@@ -128,6 +134,7 @@
                 roles = teamData.roles || [];
                 tasks = taskData.tasks || [];
                 logs = logData.logs || [];
+                incidents = incidentData.incidents || [];
                 updateUI();
             } catch (e) {
                 console.error('HQ refresh failed', e);
@@ -245,6 +252,32 @@
             await refreshAll();
         }
 
+        async function ingestIncident() {
+            const errorText = document.getElementById('incidentError').value.trim();
+            if (!errorText) {
+                showToast('Paste an error first');
+                return;
+            }
+            const data = await api('/incidents', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ error: errorText, source: 'operator', site: clientId() === 'spirit_fire' ? 'spiritfiretobacco.com' : 'mohawkmedibles.ca' })
+            });
+            showToast(data.success ? ('Gloris staged ' + (data.incident.diagnosis.playbook || 'incident')) : (data.error || 'Ingest failed'));
+            currentTab = 'incidents';
+            await refreshAll();
+        }
+
+        async function updateIncident(id, status) {
+            const data = await api('/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'incident', incidentId: id, status: status })
+            });
+            showToast(data.success ? ('Incident ' + status) : (data.error || 'Update failed'));
+            await refreshAll();
+        }
+
         function switchTab(tab) {
             currentTab = tab;
             document.querySelectorAll('.tab').forEach(node => node.classList.remove('active'));
@@ -261,10 +294,12 @@
             const staged = videos.filter(v => v.status === 'staged').length;
             const pendingLeads = leads.filter(l => l.status === 'staged').length;
             const openTasks = tasks.filter(t => t.status === 'staged' || t.status === 'approved' || t.status === 'in_progress').length;
+            const openIncidents = incidents.filter(i => i.status === 'staged' || i.status === 'approved').length;
             document.getElementById('stats').innerHTML = [
                 stat('Staged videos', staged),
                 stat('Pending leads', pendingLeads),
                 stat('Open tasks', openTasks),
+                stat('Incidents', openIncidents),
                 stat('Team', members.length)
             ].join('');
         }
@@ -279,6 +314,7 @@
             document.getElementById('approvedCount').textContent = videos.filter(v => v.status === 'approved' || v.status === 'posted' || v.status === 'queued').length;
             document.getElementById('leadCount').textContent = leads.filter(l => l.status === 'staged').length;
             document.getElementById('taskCount').textContent = tasks.filter(t => t.status === 'staged').length;
+            document.getElementById('incidentCount').textContent = incidents.filter(i => i.status === 'staged').length;
 
             const content = document.getElementById('content');
             if (currentTab === 'staging' || currentTab === 'approved') {
@@ -302,6 +338,10 @@
             }
             if (currentTab === 'team') {
                 content.innerHTML = renderTeam();
+                return;
+            }
+            if (currentTab === 'incidents') {
+                content.innerHTML = renderIncidents();
                 return;
             }
             if (!logs.length) {
@@ -352,6 +392,24 @@
                 }).join('')
                 : '<div class="empty-state"><h3>No staged tasks</h3><p>Click "Propose Tasks" to let Ara draft work from staging and leads.</p></div>';
             return invite + '<h2 class="section-title">Members</h2><div class="card-grid">' + people + '</div><h2 class="section-title">Roles</h2><div class="card-grid">' + roleList + '</div><h2 class="section-title">Agent-drafted tasks</h2><div class="card-grid">' + taskCards + '</div>';
+        }
+
+        function renderIncidents() {
+            const form = '<div class="panel-card" style="margin-bottom:16px"><div class="card-body"><div class="card-title">Gloris · Cursor Bridge</div><p class="why">Paste a realtime error. Gloris diagnoses locally even if Codex/OpenAI 401s. Approve before anything deploys.</p><textarea class="error-box" id="incidentError" placeholder="Paste production error…"></textarea></div><div class="card-actions"><button class="btn-small btn-approve" onclick="ingestIncident()">Diagnose with Gloris</button></div></div>';
+            if (!incidents.length) {
+                return form + '<div class="empty-state"><h3>No incidents</h3><p>Paste the Spirit Fire product error or a Gloris task log.</p></div>';
+            }
+            const cards = incidents.map(function (item) {
+                const diagnosis = item.diagnosis || {};
+                const premium = item.premium || {};
+                const actions = item.status === 'staged'
+                    ? '<button class="btn-small btn-approve" onclick="updateIncident(\'' + item.id + '\', \'approved\')">Approve Cursor Bridge</button><button class="btn-small btn-reject" onclick="updateIncident(\'' + item.id + '\', \'rejected\')">Reject</button>'
+                    : item.status === 'approved'
+                        ? '<button class="btn-small btn-post" onclick="updateIncident(\'' + item.id + '\', \'resolved\')">Mark resolved</button>'
+                        : '';
+                return '<div class="panel-card"><div class="card-body"><div class="card-title">' + escapeHtml(diagnosis.title || 'Incident') + '</div><div class="muted"><span class="status-badge status-' + item.status + '">' + escapeHtml(item.status) + '</span> · ' + escapeHtml(item.site || '') + ' · ' + escapeHtml(diagnosis.playbook || '') + ' · premium ' + escapeHtml(premium.reason || 'local') + '</div><p class="why">' + escapeHtml(diagnosis.summary || '') + '</p><div class="outreach">' + escapeHtml(diagnosis.fix || '') + (diagnosis.patch ? '\n\n' + diagnosis.patch : '') + '</div></div><div class="card-actions">' + actions + '</div></div>';
+            }).join('');
+            return form + '<div class="card-grid">' + cards + '</div>';
         }
 
         function formatDate(iso) {

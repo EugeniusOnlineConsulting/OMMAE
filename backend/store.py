@@ -33,6 +33,8 @@ def _empty() -> dict[str, Any]:
         "roles": {},
         "tasks": {},
         "logs": [],
+        "incidents": {},
+        "bridgeJobs": {},
     }
 
 
@@ -62,6 +64,15 @@ def _seed(data: dict[str, Any]) -> dict[str, Any]:
                 "name": "HQ Operations",
                 "email": "ops@mohawkmedibles.ca",
                 "role": "manager",
+                "active": True,
+                "lastActive": utcnow(),
+                "createdAt": utcnow(),
+            },
+            "member-gloris": {
+                "id": "member-gloris",
+                "name": "Gloris",
+                "email": "gloris@ommae.local",
+                "role": "agent",
                 "active": True,
                 "lastActive": utcnow(),
                 "createdAt": utcnow(),
@@ -102,6 +113,8 @@ def _seed(data: dict[str, Any]) -> dict[str, Any]:
     data.setdefault("leads", {})
     data.setdefault("tasks", {})
     data.setdefault("logs", [])
+    data.setdefault("incidents", {})
+    data.setdefault("bridgeJobs", {})
     return data
 
 
