@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OMMAE Admin | Mohawk Medibles</title>
+    <title>OMMAE HQ | Mohawk Medibles</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -12,76 +12,370 @@
             color: #e0e0e0;
             min-height: 100vh;
         }
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: #1a1a2e; border-bottom: 1px solid #2d2d44; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: #1a1a2e; border-bottom: 1px solid #2d2d44; gap: 16px; flex-wrap: wrap; }
         .logo { color: #00d9a5; font-size: 24px; font-weight: bold; }
         .logo span { color: #666; font-size: 14px; font-weight: normal; margin-left: 8px; }
-        .header-actions { display: flex; gap: 12px; align-items: center; }
-        .brand-select { background: #2d2d44; border: 1px solid #3d3d5c; color: #e0e0e0; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
-        .btn-primary { background: #00d9a5; color: #0f0f1a; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .header-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .brand-select, .text-input, .role-select {
+            background: #2d2d44; border: 1px solid #3d3d5c; color: #e0e0e0;
+            padding: 8px 16px; border-radius: 6px;
+        }
+        .btn-primary { background: #00d9a5; color: #0f0f1a; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; }
         .btn-primary:hover { background: #00b388; }
-        .btn-primary:disabled { background: #444; cursor: not-allowed; }
-        .tabs { display: flex; gap: 0; background: #1a1a2e; border-bottom: 1px solid #2d2d44; }
-        .tab { padding: 14px 24px; color: #888; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .btn-primary:disabled { background: #444; color: #888; cursor: not-allowed; }
+        .btn-ghost { background: #2d2d44; color: #e0e0e0; border: 1px solid #3d3d5c; padding: 10px 16px; border-radius: 6px; cursor: pointer; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; padding: 16px 24px; }
+        .stat { background: #1a1a2e; border: 1px solid #2d2d44; border-radius: 10px; padding: 14px 16px; }
+        .stat .label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.04em; }
+        .stat .value { font-size: 22px; font-weight: 700; color: #00d9a5; margin-top: 4px; }
+        .tabs { display: flex; gap: 0; background: #1a1a2e; border-bottom: 1px solid #2d2d44; overflow-x: auto; }
+        .tab { padding: 14px 24px; color: #888; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
         .tab:hover { color: #00d9a5; }
         .tab.active { color: #00d9a5; border-bottom-color: #00d9a5; }
         .tab .count { background: #2d2d44; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-left: 6px; }
         .main { padding: 24px; }
-        .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
-        .video-card { background: #1a1a2e; border-radius: 12px; overflow: hidden; border: 1px solid #2d2d44; transition: all 0.2s; }
-        .video-card:hover { border-color: #00d9a5; transform: translateY(-2px); }
-        .video-preview { position: relative; width: 100%; aspect-ratio: 16/9; background: #0a0a14; }
-        .video-preview video { width: 100%; height: 100%; object-fit: cover; }
-        .video-info { padding: 16px; }
-        .video-topic { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
-        .video-meta { font-size: 12px; color: #666; }
-        .video-actions { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid #2d2d44; }
-        .btn-small { flex: 1; padding: 8px 12px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+        .video-grid, .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .video-card, .panel-card { background: #1a1a2e; border-radius: 12px; overflow: hidden; border: 1px solid #2d2d44; }
+        .video-card:hover, .panel-card:hover { border-color: #00d9a5; }
+        .video-preview { width: 100%; min-height: 140px; background: #0a0a14; padding: 16px; color: #bbb; font-size: 14px; line-height: 1.45; }
+        .video-info, .card-body { padding: 16px; }
+        .video-topic, .card-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+        .video-meta, .muted { font-size: 12px; color: #888; }
+        .video-actions, .card-actions { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid #2d2d44; flex-wrap: wrap; }
+        .btn-small { flex: 1; min-width: 90px; padding: 8px 12px; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; }
         .btn-approve { background: #00d9a5; color: #0f0f1a; }
         .btn-reject { background: #ff4757; color: white; }
         .btn-post { background: #5352ed; color: white; }
         .empty-state { text-align: center; padding: 60px 20px; color: #666; }
-        .empty-state h3 { margin-bottom: 8px; color: #888; }
         .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
         .status-staged { background: #ffa502; color: #0f0f1a; }
         .status-approved { background: #00d9a5; color: #0f0f1a; }
-        .status-posted { background: #5352ed; color: white; }
+        .status-posted, .status-contacted, .status-done { background: #5352ed; color: white; }
+        .status-queued, .status-in_progress { background: #3742fa; color: white; }
+        .status-rejected { background: #ff4757; color: white; }
         .spinner { width: 20px; height: 20px; border: 2px solid #333; border-top-color: #00d9a5; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; margin-right: 8px; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .toast { position: fixed; bottom: 24px; right: 24px; background: #1a1a2e; border: 1px solid #00d9a5; padding: 16px 24px; border-radius: 8px; display: none; z-index: 1000; }
-        .toast.show { display: block; animation: slideIn 0.3s ease; }
-        @keyframes slideIn { from { transform: translateX(100px); opacity: 0; } }
+        .toast { position: fixed; bottom: 24px; right: 24px; background: #1a1a2e; border: 1px solid #00d9a5; padding: 16px 24px; border-radius: 8px; display: none; z-index: 1000; max-width: 360px; }
+        .toast.show { display: block; }
         .footer { text-align: center; padding: 20px; color: #444; font-size: 12px; border-top: 1px solid #1a1a2e; }
+        .invite-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+        .log-item { background: #1a1a2e; border: 1px solid #2d2d44; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; }
+        .section-title { font-size: 18px; margin: 8px 0 16px; }
+        .why { font-size: 13px; color: #bbb; margin: 8px 0; }
+        .outreach { background: #0a0a14; border-radius: 8px; padding: 10px; font-size: 13px; color: #ccc; margin-top: 8px; }
     </style>
 </head>
 <body>
     <header class="header">
-        <div class="logo">OMMAE <span>v0.1</span></div>
+        <div class="logo">OMMAE HQ <span>v0.2 · agent in the loop</span></div>
         <div class="header-actions">
-            <select class="brand-select" id="brandSelect"><option value="mohawk_medibles">Mohawk Medibles</option></select>
+            <select class="brand-select" id="brandSelect">
+                <option value="mohawk_medibles">Mohawk Medibles</option>
+            </select>
+            <button class="btn-ghost" id="leadsBtn" onclick="findLeads()">Find Leads</button>
+            <button class="btn-ghost" id="tasksBtn" onclick="proposeTasks()">Propose Tasks</button>
             <button class="btn-primary" id="newVideoBtn" onclick="generateVideo()">+ New Video</button>
         </div>
     </header>
+    <section class="stats" id="stats"></section>
     <nav class="tabs">
         <div class="tab active" data-tab="staging" onclick="switchTab('staging')">Staging <span class="count" id="stagingCount">0</span></div>
         <div class="tab" data-tab="approved" onclick="switchTab('approved')">Approved <span class="count" id="approvedCount">0</span></div>
+        <div class="tab" data-tab="acquisition" onclick="switchTab('acquisition')">Acquisition <span class="count" id="leadCount">0</span></div>
+        <div class="tab" data-tab="team" onclick="switchTab('team')">Team <span class="count" id="taskCount">0</span></div>
         <div class="tab" data-tab="logs" onclick="switchTab('logs')">Logs</div>
     </nav>
-    <main class="main"><div id="content"><div class="empty-state"><h3>No videos in staging</h3><p>Click "+ New Video" to generate content</p></div></div></main>
-    <footer class="footer">OMMAE v0.1 | Self-healing content empire | Built for Mohawk Medibles</footer>
+    <main class="main"><div id="content"><div class="empty-state"><h3>Loading HQ…</h3></div></div></main>
+    <footer class="footer">OMMAE HQ | Agent drafts. Humans approve. Built for Mohawk Medibles.</footer>
     <div class="toast" id="toast"></div>
     <script>
-        const API_URL = 'https://ommae-api-244799968350.us-central1.run.app';
-        let currentTab = 'staging', videos = [], isGenerating = false;
-        document.addEventListener('DOMContentLoaded', () => { fetchVideos(); setInterval(fetchVideos, 10000); });
-        async function fetchVideos() { try { const r = await fetch(API_URL + '?action=videos'); const d = await r.json(); if (d.success) { videos = d.videos || []; updateUI(); } } catch (e) { console.error('Failed:', e); } }
-        async function generateVideo() { if (isGenerating) return; const btn = document.getElementById('newVideoBtn'); isGenerating = true; btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Generating...'; try { const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'generate-video', topic: 'Indigenous Cannabis Wellness' }) }); const d = await r.json(); if (d.success) { showToast('Video generated!'); await fetchVideos(); } else { showToast('Failed: ' + (d.error || 'Unknown')); } } catch (e) { showToast('Error'); } finally { isGenerating = false; btn.disabled = false; btn.innerHTML = '+ New Video'; } }
-        async function updateVideoStatus(id, status) { try { const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'video', video_id: id, status }) }); const d = await r.json(); if (d.success) { showToast('Video ' + status + '!'); await fetchVideos(); } } catch (e) { console.error(e); } }
-        function switchTab(tab) { currentTab = tab; document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); document.querySelector('[data-tab="' + tab + '"]').classList.add('active'); updateUI(); }
-        function updateUI() { const content = document.getElementById('content'); let filtered = videos; if (currentTab === 'staging') filtered = videos.filter(v => v.status === 'staged'); else if (currentTab === 'approved') filtered = videos.filter(v => v.status === 'approved' || v.status === 'posted'); document.getElementById('stagingCount').textContent = videos.filter(v => v.status === 'staged').length; document.getElementById('approvedCount').textContent = videos.filter(v => v.status === 'approved' || v.status === 'posted').length; if (currentTab === 'logs') { content.innerHTML = '<div class="empty-state"><h3>Activity Logs</h3><p>Coming soon...</p></div>'; return; } if (filtered.length === 0) { content.innerHTML = '<div class="empty-state"><h3>No videos in ' + currentTab + '</h3><p>' + (currentTab === 'staging' ? 'Click "+ New Video"' : 'Approve from staging') + '</p></div>'; return; } content.innerHTML = '<div class="video-grid">' + filtered.map(v => renderVideoCard(v)).join('') + '</div>'; }
-        function renderVideoCard(v) { return '<div class="video-card"><div class="video-preview"><video controls preload="metadata" poster="' + v.thumbnail + '"><source src="' + v.video_url + '" type="video/mp4"></video></div><div class="video-info"><div class="video-topic">' + v.topic + '</div><div class="video-meta"><span class="status-badge status-' + v.status + '">' + v.status + '</span> • ' + v.duration + ' • ' + formatDate(v.created_at) + '</div></div><div class="video-actions">' + (v.status === 'staged' ? '<button class="btn-small btn-approve" onclick="updateVideoStatus(\'' + v.id + '\', \'approved\')">Approve</button><button class="btn-small btn-reject" onclick="updateVideoStatus(\'' + v.id + '\', \'rejected\')">Reject</button>' : '') + (v.status === 'approved' ? '<button class="btn-small btn-post" onclick="postVideo(\'' + v.id + '\')">POST NOW</button>' : '') + (v.status === 'posted' ? '<button class="btn-small" style="background:#333;color:#888" disabled>Posted</button>' : '') + '</div></div>'; }
-        async function postVideo(id) { showToast('Posting to Instagram, TikTok, YouTube...'); setTimeout(async () => { await updateVideoStatus(id, 'posted'); showToast('Posted to 3 platforms!'); }, 2000); }
-        function formatDate(iso) { const d = new Date(iso), diff = (new Date() - d) / 1000; if (diff < 60) return 'Just now'; if (diff < 3600) return Math.floor(diff/60) + 'm ago'; if (diff < 86400) return Math.floor(diff/3600) + 'h ago'; return d.toLocaleDateString(); }
-        function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 4000); }
+        const API_URL = (location.protocol.startsWith('http') && (location.port === '8080' || location.pathname.indexOf('/admin') === 0 || location.pathname.indexOf('/hq') === 0))
+            ? location.origin
+            : 'https://ommae-api-244799968350.us-central1.run.app';
+        let currentTab = 'staging';
+        let videos = [];
+        let leads = [];
+        let members = [];
+        let roles = [];
+        let tasks = [];
+        let logs = [];
+        let isGenerating = false;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshAll();
+            setInterval(refreshAll, 10000);
+        });
+
+        async function api(path, options) {
+            const response = await fetch(API_URL + path, options);
+            return response.json();
+        }
+
+        async function refreshAll() {
+            try {
+                const [videoData, leadData, teamData, taskData, logData] = await Promise.all([
+                    api('/videos?client=' + clientId()),
+                    api('/leads?client=' + clientId()),
+                    api('/team'),
+                    api('/tasks'),
+                    api('/logs')
+                ]);
+                videos = videoData.videos || [];
+                leads = leadData.leads || [];
+                members = teamData.members || [];
+                roles = teamData.roles || [];
+                tasks = taskData.tasks || [];
+                logs = logData.logs || [];
+                updateUI();
+            } catch (e) {
+                console.error('HQ refresh failed', e);
+            }
+        }
+
+        function clientId() {
+            return document.getElementById('brandSelect').value;
+        }
+
+        async function generateVideo() {
+            if (isGenerating) return;
+            const btn = document.getElementById('newVideoBtn');
+            isGenerating = true;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Generating...';
+            try {
+                const data = await api('/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'generate-video', client: clientId(), topic: 'Indigenous Cannabis Wellness' })
+                });
+                showToast(data.success ? 'Video staged for human review' : ('Failed: ' + (data.error || 'Unknown')));
+                await refreshAll();
+            } catch (e) {
+                showToast('Could not generate video');
+            } finally {
+                isGenerating = false;
+                btn.disabled = false;
+                btn.innerHTML = '+ New Video';
+            }
+        }
+
+        async function updateVideoStatus(id, status) {
+            try {
+                const data = await api('/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'video', video_id: id, status: status })
+                });
+                showToast(data.success ? ('Video ' + (data.status || status)) : (data.error || 'Update failed'));
+                await refreshAll();
+            } catch (e) {
+                showToast('Could not update video');
+            }
+        }
+
+        async function postVideo(id) {
+            showToast('Checking social credentials…');
+            await updateVideoStatus(id, 'posted');
+        }
+
+        async function findLeads() {
+            const btn = document.getElementById('leadsBtn');
+            btn.disabled = true;
+            try {
+                const data = await api('/leads', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ client: clientId(), topic: 'Indigenous Cannabis Wellness' })
+                });
+                showToast((data.leads || []).length + ' leads staged for approval');
+                currentTab = 'acquisition';
+                await refreshAll();
+            } catch (e) {
+                showToast('Could not draft leads');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function updateLead(id, status) {
+            const data = await api('/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'lead', leadId: id, status: status })
+            });
+            showToast(data.success ? ('Lead ' + status) : (data.error || 'Update failed'));
+            await refreshAll();
+        }
+
+        async function proposeTasks() {
+            const data = await api('/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+            showToast((data.tasks || []).length + ' tasks staged for approval');
+            currentTab = 'team';
+            await refreshAll();
+        }
+
+        async function updateTask(id, status) {
+            const data = await api('/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'task', taskId: id, status: status })
+            });
+            showToast(data.success ? ('Task ' + status) : (data.error || 'Update failed'));
+            await refreshAll();
+        }
+
+        async function inviteMember() {
+            const name = document.getElementById('inviteName').value.trim();
+            const email = document.getElementById('inviteEmail').value.trim();
+            const role = document.getElementById('inviteRole').value;
+            if (!name || !email) {
+                showToast('Name and email are required');
+                return;
+            }
+            const data = await api('/team', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name, email: email, role: role })
+            });
+            showToast(data.success ? ('Invited ' + name) : (data.error || 'Invite failed'));
+            document.getElementById('inviteName').value = '';
+            document.getElementById('inviteEmail').value = '';
+            await refreshAll();
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(node => node.classList.remove('active'));
+            document.querySelector('[data-tab="' + tab + '"]').classList.add('active');
+            updateUI();
+        }
+
+        function memberName(id) {
+            const found = members.find(m => m.id === id);
+            return found ? found.name : 'Unassigned';
+        }
+
+        function renderStats() {
+            const staged = videos.filter(v => v.status === 'staged').length;
+            const pendingLeads = leads.filter(l => l.status === 'staged').length;
+            const openTasks = tasks.filter(t => t.status === 'staged' || t.status === 'approved' || t.status === 'in_progress').length;
+            document.getElementById('stats').innerHTML = [
+                stat('Staged videos', staged),
+                stat('Pending leads', pendingLeads),
+                stat('Open tasks', openTasks),
+                stat('Team', members.length)
+            ].join('');
+        }
+
+        function stat(label, value) {
+            return '<div class="stat"><div class="label">' + label + '</div><div class="value">' + value + '</div></div>';
+        }
+
+        function updateUI() {
+            renderStats();
+            document.getElementById('stagingCount').textContent = videos.filter(v => v.status === 'staged').length;
+            document.getElementById('approvedCount').textContent = videos.filter(v => v.status === 'approved' || v.status === 'posted' || v.status === 'queued').length;
+            document.getElementById('leadCount').textContent = leads.filter(l => l.status === 'staged').length;
+            document.getElementById('taskCount').textContent = tasks.filter(t => t.status === 'staged').length;
+
+            const content = document.getElementById('content');
+            if (currentTab === 'staging' || currentTab === 'approved') {
+                const filtered = currentTab === 'staging'
+                    ? videos.filter(v => v.status === 'staged')
+                    : videos.filter(v => v.status === 'approved' || v.status === 'posted' || v.status === 'queued');
+                if (!filtered.length) {
+                    content.innerHTML = '<div class="empty-state"><h3>No videos in ' + currentTab + '</h3><p>' + (currentTab === 'staging' ? 'Click "+ New Video" to draft content for review' : 'Approve from staging') + '</p></div>';
+                    return;
+                }
+                content.innerHTML = '<div class="video-grid">' + filtered.map(renderVideoCard).join('') + '</div>';
+                return;
+            }
+            if (currentTab === 'acquisition') {
+                if (!leads.length) {
+                    content.innerHTML = '<div class="empty-state"><h3>No acquisition drafts</h3><p>Click "Find Leads". Ara stages outreach. You approve before anyone is contacted.</p></div>';
+                    return;
+                }
+                content.innerHTML = '<div class="card-grid">' + leads.map(renderLeadCard).join('') + '</div>';
+                return;
+            }
+            if (currentTab === 'team') {
+                content.innerHTML = renderTeam();
+                return;
+            }
+            if (!logs.length) {
+                content.innerHTML = '<div class="empty-state"><h3>No activity yet</h3><p>Generate a video, draft leads, or propose tasks.</p></div>';
+                return;
+            }
+            content.innerHTML = logs.map(function (entry) {
+                return '<div class="log-item"><div class="muted">' + escapeHtml(entry.actor || 'Ara') + ' · ' + escapeHtml(entry.type || '') + ' · ' + formatDate(entry.createdAt) + '</div><div>' + escapeHtml(entry.message) + '</div></div>';
+            }).join('');
+        }
+
+        function renderVideoCard(v) {
+            const actions = v.status === 'staged'
+                ? '<button class="btn-small btn-approve" onclick="updateVideoStatus(\'' + v.id + '\', \'approved\')">Approve</button><button class="btn-small btn-reject" onclick="updateVideoStatus(\'' + v.id + '\', \'rejected\')">Reject</button>'
+                : v.status === 'approved'
+                    ? '<button class="btn-small btn-post" onclick="postVideo(\'' + v.id + '\')">POST NOW</button>'
+                    : '<button class="btn-small" style="background:#333;color:#888" disabled>' + escapeHtml(v.status) + '</button>';
+            return '<div class="video-card"><div class="video-preview">' + escapeHtml(v.script || 'Script pending') + '</div><div class="video-info"><div class="video-topic">' + escapeHtml(v.topic) + '</div><div class="video-meta"><span class="status-badge status-' + v.status + '">' + escapeHtml(v.status) + '</span> · ' + escapeHtml(v.duration || '0:30') + ' · ' + formatDate(v.created_at || v.createdAt) + (v.realGeneration ? ' · live audio' : '') + '</div></div><div class="video-actions">' + actions + '</div></div>';
+        }
+
+        function renderLeadCard(lead) {
+            const actions = lead.status === 'staged'
+                ? '<button class="btn-small btn-approve" onclick="updateLead(\'' + lead.id + '\', \'approved\')">Approve outreach</button><button class="btn-small btn-reject" onclick="updateLead(\'' + lead.id + '\', \'rejected\')">Reject</button>'
+                : lead.status === 'approved'
+                    ? '<button class="btn-small btn-post" onclick="updateLead(\'' + lead.id + '\', \'contacted\')">Mark contacted</button>'
+                    : '';
+            return '<div class="panel-card"><div class="card-body"><div class="card-title">' + escapeHtml(lead.name) + '</div><div class="muted"><span class="status-badge status-' + lead.status + '">' + escapeHtml(lead.status) + '</span> · ' + escapeHtml(lead.channel) + ' · score ' + lead.score + ' · ' + escapeHtml(lead.region) + '</div><p class="why">' + escapeHtml(lead.why) + '</p><div class="outreach">' + escapeHtml(lead.outreach) + '</div></div><div class="card-actions">' + actions + '</div></div>';
+        }
+
+        function renderTeam() {
+            const invite = '<div class="invite-row"><input class="text-input" id="inviteName" placeholder="Name"><input class="text-input" id="inviteEmail" placeholder="Email"><select class="role-select" id="inviteRole"><option value="staff">Staff</option><option value="manager">Manager</option><option value="owner">Owner</option></select><button class="btn-primary" onclick="inviteMember()">Invite member</button></div>';
+            const people = members.map(function (member) {
+                return '<div class="panel-card"><div class="card-body"><div class="card-title">' + escapeHtml(member.name) + '</div><div class="muted">' + escapeHtml(member.email) + ' · ' + escapeHtml(member.role) + ' · ' + (member.active ? 'Active' : 'Inactive') + '</div></div></div>';
+            }).join('');
+            const roleList = roles.map(function (role) {
+                return '<div class="panel-card"><div class="card-body"><div class="card-title">' + escapeHtml(role.name) + '</div><div class="muted">' + escapeHtml(role.description || '') + ' · ' + (role.memberCount || 0) + ' members</div></div></div>';
+            }).join('');
+            const taskCards = tasks.length
+                ? tasks.map(function (task) {
+                    const actions = task.status === 'staged'
+                        ? '<button class="btn-small btn-approve" onclick="updateTask(\'' + task.id + '\', \'approved\')">Approve</button><button class="btn-small btn-reject" onclick="updateTask(\'' + task.id + '\', \'rejected\')">Reject</button>'
+                        : task.status === 'approved'
+                            ? '<button class="btn-small btn-post" onclick="updateTask(\'' + task.id + '\', \'in_progress\')">Start</button><button class="btn-small btn-approve" onclick="updateTask(\'' + task.id + '\', \'done\')">Done</button>'
+                            : task.status === 'in_progress'
+                                ? '<button class="btn-small btn-approve" onclick="updateTask(\'' + task.id + '\', \'done\')">Done</button>'
+                                : '';
+                    return '<div class="panel-card"><div class="card-body"><div class="card-title">' + escapeHtml(task.title) + '</div><div class="muted"><span class="status-badge status-' + task.status + '">' + escapeHtml(task.status) + '</span> · ' + escapeHtml(task.priority) + ' · ' + escapeHtml(memberName(task.assigneeId)) + '</div><p class="why">' + escapeHtml(task.description) + '</p></div><div class="card-actions">' + actions + '</div></div>';
+                }).join('')
+                : '<div class="empty-state"><h3>No staged tasks</h3><p>Click "Propose Tasks" to let Ara draft work from staging and leads.</p></div>';
+            return invite + '<h2 class="section-title">Members</h2><div class="card-grid">' + people + '</div><h2 class="section-title">Roles</h2><div class="card-grid">' + roleList + '</div><h2 class="section-title">Agent-drafted tasks</h2><div class="card-grid">' + taskCards + '</div>';
+        }
+
+        function formatDate(iso) {
+            if (!iso) return '';
+            const d = new Date(iso);
+            const diff = (new Date() - d) / 1000;
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+            if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+            return d.toLocaleDateString();
+        }
+
+        function escapeHtml(value) {
+            return String(value == null ? '' : value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 4000);
+        }
     </script>
 </body>
 </html>
