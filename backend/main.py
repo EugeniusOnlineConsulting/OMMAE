@@ -16,6 +16,7 @@ import functions_framework
 from flask import Flask, jsonify, request, send_from_directory
 
 import acquisition
+import gloris
 import team_ops
 from store import add_log, mutate, snapshot, utcnow
 
@@ -54,6 +55,10 @@ def normalize_client(value: str | None) -> str:
         "mohawkmedibles": DEFAULT_CLIENT,
         "mohawk_medibles": DEFAULT_CLIENT,
         "mohawk": DEFAULT_CLIENT,
+        "spiritfire": "spirit_fire",
+        "spiritfiretobacco": "spirit_fire",
+        "spirit_fire_tobacco": "spirit_fire",
+        "spirit_fire": "spirit_fire",
     }
     return aliases.get(raw, raw or DEFAULT_CLIENT)
 
@@ -307,6 +312,7 @@ def root():
                 "leads": len(data.get("leads", {})),
                 "tasks": len(data.get("tasks", {})),
                 "members": len(data.get("members", {})),
+                "incidents": len(data.get("incidents", {})),
             },
         }
     )
@@ -422,6 +428,34 @@ def logs_route():
     return ok({"success": True, "logs": snapshot().get("logs", [])[:100]})
 
 
+@app.route("/incidents", methods=["GET", "POST", "OPTIONS"])
+def incidents_route():
+    if request.method == "OPTIONS":
+        return ("", 204, cors_headers())
+    if request.method == "POST":
+        body = json_body()
+        error_text = body.get("error") or body.get("text") or ""
+        if not error_text.strip():
+            return ok({"success": False, "error": "error text is required"}, 400)
+        incident = gloris.ingest_incident(
+            error_text,
+            source=body.get("source") or "operator",
+            site=body.get("site"),
+            task_id=body.get("taskId") or body.get("task_id"),
+        )
+        return ok({"success": True, "incident": incident, "bridge": gloris.cursor_bridge_payload(incident)})
+    return ok({"success": True, "incidents": gloris.list_incidents()})
+
+
+@app.route("/bridge", methods=["GET", "OPTIONS"])
+@app.route("/bridge/next", methods=["GET", "OPTIONS"])
+def bridge_route():
+    if request.method == "OPTIONS":
+        return ("", 204, cors_headers())
+    job = gloris.next_bridge_job()
+    return ok({"success": True, "job": job, "jobs": gloris.list_bridge_jobs(request.args.get("status"))})
+
+
 def handle_generate_video():
     body = json_body()
     client = normalize_client(body.get("client") or request.args.get("client"))
@@ -520,6 +554,32 @@ def handle_action(action: str):
         return ok({"success": True, "tasks": team_ops.list_tasks()})
     if action in {"task"}:
         return handle_task_status()
+    if action in {"incident"}:
+        body = json_body()
+        status = (body.get("status") or "").strip().lower()
+        incident_id = body.get("incidentId") or body.get("incident_id")
+        if status not in {"approved", "rejected", "resolved", "staged"}:
+            return ok({"success": False, "error": "Unknown incident status"}, 400)
+        incident = gloris.update_incident(incident_id, status)
+        if not incident:
+            return ok({"success": False, "error": "Incident not found"}, 404)
+        return ok({"success": True, "incident": incident})
+    if action in {"incidents", "gloris"}:
+        if request.method == "POST":
+            body = json_body()
+            text = body.get("error") or body.get("text") or ""
+            if not str(text).strip():
+                return ok({"success": False, "error": "error text is required"}, 400)
+            incident = gloris.ingest_incident(
+                text,
+                source=body.get("source") or "operator",
+                site=body.get("site"),
+                task_id=body.get("taskId"),
+            )
+            return ok({"success": True, "incident": incident})
+        return ok({"success": True, "incidents": gloris.list_incidents()})
+    if action in {"bridge"}:
+        return ok({"success": True, "job": gloris.next_bridge_job(), "jobs": gloris.list_bridge_jobs()})
     if action in {"logs"}:
         return ok({"success": True, "logs": snapshot().get("logs", [])[:100]})
     return ok({"success": False, "error": f"Unknown action: {action}"}, 404)
