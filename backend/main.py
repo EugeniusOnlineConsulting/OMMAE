@@ -319,6 +319,11 @@ def health():
     return ok({"status": "healthy", "version": "0.2.0"})
 
 
+@app.route("/favicon.ico")
+def favicon():
+    return ("", 204)
+
+
 @app.route("/admin")
 @app.route("/admin/")
 @app.route("/hq")

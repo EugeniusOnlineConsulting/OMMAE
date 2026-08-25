@@ -16,10 +16,12 @@
         .logo { color: #00d9a5; font-size: 24px; font-weight: bold; }
         .logo span { color: #666; font-size: 14px; font-weight: normal; margin-left: 8px; }
         .header-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-        .brand-select, .text-input, .role-select {
+        .text-input, .role-select {
             background: #2d2d44; border: 1px solid #3d3d5c; color: #e0e0e0;
-            padding: 8px 16px; border-radius: 6px;
+            padding: 8px 16px; border-radius: 6px; min-width: 180px;
         }
+        .text-input::placeholder { color: #8a8aaa; }
+        .text-input:focus, .role-select:focus { outline: 2px solid #00d9a5; border-color: #00d9a5; }
         .btn-primary { background: #00d9a5; color: #0f0f1a; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; }
         .btn-primary:hover { background: #00b388; }
         .btn-primary:disabled { background: #444; color: #888; cursor: not-allowed; }
@@ -330,7 +332,7 @@
         }
 
         function renderTeam() {
-            const invite = '<div class="invite-row"><input class="text-input" id="inviteName" placeholder="Name"><input class="text-input" id="inviteEmail" placeholder="Email"><select class="role-select" id="inviteRole"><option value="staff">Staff</option><option value="manager">Manager</option><option value="owner">Owner</option></select><button class="btn-primary" onclick="inviteMember()">Invite member</button></div>';
+            const invite = '<div class="invite-row"><label class="muted">Name<br><input class="text-input" id="inviteName" name="inviteName" autocomplete="off" placeholder="Jordan Staff"></label><label class="muted">Email<br><input class="text-input" id="inviteEmail" name="inviteEmail" type="email" autocomplete="off" placeholder="jordan@mohawkmedibles.ca"></label><label class="muted">Role<br><select class="role-select" id="inviteRole"><option value="staff">Staff</option><option value="manager">Manager</option><option value="owner">Owner</option></select></label><button class="btn-primary" id="inviteBtn" type="button" onclick="inviteMember()">Invite member</button></div>';
             const people = members.map(function (member) {
                 return '<div class="panel-card"><div class="card-body"><div class="card-title">' + escapeHtml(member.name) + '</div><div class="muted">' + escapeHtml(member.email) + ' · ' + escapeHtml(member.role) + ' · ' + (member.active ? 'Active' : 'Inactive') + '</div></div></div>';
             }).join('');

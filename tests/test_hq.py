@@ -22,6 +22,7 @@ def test_admin_hq_is_served():
     assert "Acquisition" in html
     assert "Propose Tasks" in html
     assert "Invite member" in html
+    assert client().get("/favicon.ico").status_code == 204
 
 
 def test_content_hitl_generate_approve_reject_and_queue_post():

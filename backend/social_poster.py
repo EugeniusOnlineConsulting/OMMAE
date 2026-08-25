@@ -35,12 +35,17 @@ class SocialPoster:
         results = await asyncio.gather(*tasks, return_exceptions=True)
         
         success_count = sum(1 for r in results if isinstance(r, dict) and r.get('success'))
+        message = (
+            f'Posted to {success_count} platform(s).'
+            if success_count
+            else 'No platforms published. Video queued until social APIs are wired and credentials exist.'
+        )
         
         return {
             'success': success_count > 0,
             'platforms_posted': success_count,
             'results': self.results,
-            'message': f'Your empire just creamed on {success_count} platforms. Go make coffee.',
+            'message': message,
             'timestamp': datetime.now().isoformat()
         }
     
