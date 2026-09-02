@@ -82,6 +82,7 @@ def propose_tasks() -> list[dict[str, Any]]:
     staged_videos = [v for v in data.get("videos", {}).values() if v.get("status") == "staged"]
     staged_leads = [lead for lead in data.get("leads", {}).values() if lead.get("status") == "staged"]
     approved_leads = [lead for lead in data.get("leads", {}).values() if lead.get("status") == "approved"]
+    staged_incidents = [item for item in data.get("incidents", {}).values() if item.get("status") == "staged"]
     owner = next((m["id"] for m in data.get("members", {}).values() if m.get("role") == "owner"), None)
     manager = next((m["id"] for m in data.get("members", {}).values() if m.get("role") == "manager"), owner)
 
@@ -114,6 +115,16 @@ def propose_tasks() -> list[dict[str, Any]]:
                     "Outreach is cleared. Assign an owner and mark contacted after the human send.",
                     manager,
                     "medium",
+                )
+            )
+        if staged_incidents:
+            created.append(
+                _add_task(
+                    bucket,
+                    f"Review {len(staged_incidents)} Gloris incident(s)",
+                    "Realtime errors landed in HQ. Approve the Cursor Bridge job before any deploy. Local fallback already ran.",
+                    owner,
+                    "high",
                 )
             )
         created.append(
