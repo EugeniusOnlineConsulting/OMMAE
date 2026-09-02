@@ -66,6 +66,16 @@
         .section-title { font-size: 18px; margin: 8px 0 16px; }
         .why { font-size: 13px; color: #bbb; margin: 8px 0; }
         .outreach { background: #0a0a14; border-radius: 8px; padding: 10px; font-size: 13px; color: #ccc; margin-top: 8px; }
+        .product-form { background: #1a1a2e; border: 1px solid #2d2d44; border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+        .product-form label { display: block; font-size: 12px; color: #888; margin: 12px 0 6px; }
+        .product-form .text-input, .product-form .desc-textarea { width: 100%; min-width: 0; }
+        .desc-textarea {
+            min-height: 220px; background: #0a0a14; border: 1px solid #3d3d5c; color: #e0e0e0;
+            padding: 12px; border-radius: 8px; font-family: inherit; font-size: 14px; line-height: 1.55; resize: vertical;
+        }
+        .desc-textarea:focus { outline: 2px solid #00d9a5; border-color: #00d9a5; }
+        .field-hint { font-size: 12px; color: #888; margin-top: 6px; }
+        .product-copy { white-space: pre-wrap; background: #0a0a14; border-radius: 8px; padding: 10px; font-size: 13px; color: #ccc; margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -88,6 +98,7 @@
         <div class="tab" data-tab="approved" onclick="switchTab('approved')">Approved <span class="count" id="approvedCount">0</span></div>
         <div class="tab" data-tab="acquisition" onclick="switchTab('acquisition')">Acquisition <span class="count" id="leadCount">0</span></div>
         <div class="tab" data-tab="team" onclick="switchTab('team')">Team <span class="count" id="taskCount">0</span></div>
+        <div class="tab" data-tab="products" onclick="switchTab('products')">Products <span class="count" id="productCount">0</span></div>
         <div class="tab" data-tab="incidents" onclick="switchTab('incidents')">Incidents <span class="count" id="incidentCount">0</span></div>
         <div class="tab" data-tab="logs" onclick="switchTab('logs')">Logs</div>
     </nav>
@@ -106,6 +117,8 @@
         let tasks = [];
         let logs = [];
         let incidents = [];
+        let products = [];
+        let editingProductId = null;
         let isGenerating = false;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -120,13 +133,14 @@
 
         async function refreshAll() {
             try {
-                const [videoData, leadData, teamData, taskData, logData, incidentData] = await Promise.all([
+                const [videoData, leadData, teamData, taskData, logData, incidentData, productData] = await Promise.all([
                     api('/videos?client=' + clientId()),
                     api('/leads?client=' + clientId()),
                     api('/team'),
                     api('/tasks'),
                     api('/logs'),
-                    api('/incidents')
+                    api('/incidents'),
+                    api('/products?client=' + clientId())
                 ]);
                 videos = videoData.videos || [];
                 leads = leadData.leads || [];
@@ -135,6 +149,7 @@
                 tasks = taskData.tasks || [];
                 logs = logData.logs || [];
                 incidents = incidentData.incidents || [];
+                products = productData.products || [];
                 updateUI();
             } catch (e) {
                 console.error('HQ refresh failed', e);
@@ -299,6 +314,7 @@
                 stat('Staged videos', staged),
                 stat('Pending leads', pendingLeads),
                 stat('Open tasks', openTasks),
+                stat('Products', products.length),
                 stat('Incidents', openIncidents),
                 stat('Team', members.length)
             ].join('');
@@ -315,6 +331,7 @@
             document.getElementById('leadCount').textContent = leads.filter(l => l.status === 'staged').length;
             document.getElementById('taskCount').textContent = tasks.filter(t => t.status === 'staged').length;
             document.getElementById('incidentCount').textContent = incidents.filter(i => i.status === 'staged').length;
+            document.getElementById('productCount').textContent = products.length;
 
             const content = document.getElementById('content');
             if (currentTab === 'staging' || currentTab === 'approved') {
@@ -338,6 +355,12 @@
             }
             if (currentTab === 'team') {
                 content.innerHTML = renderTeam();
+                return;
+            }
+            if (currentTab === 'products') {
+                const typing = document.activeElement && ['productName', 'productShort', 'productLong'].indexOf(document.activeElement.id) >= 0;
+                if (typing) return;
+                content.innerHTML = renderProducts();
                 return;
             }
             if (currentTab === 'incidents') {
@@ -410,6 +433,103 @@
                 return '<div class="panel-card"><div class="card-body"><div class="card-title">' + escapeHtml(diagnosis.title || 'Incident') + '</div><div class="muted"><span class="status-badge status-' + item.status + '">' + escapeHtml(item.status) + '</span> · ' + escapeHtml(item.site || '') + ' · ' + escapeHtml(diagnosis.playbook || '') + ' · premium ' + escapeHtml(premium.reason || 'local') + '</div><p class="why">' + escapeHtml(diagnosis.summary || '') + '</p><div class="outreach">' + escapeHtml(diagnosis.fix || '') + (diagnosis.patch ? '\n\n' + diagnosis.patch : '') + '</div></div><div class="card-actions">' + actions + '</div></div>';
             }).join('');
             return form + '<div class="card-grid">' + cards + '</div>';
+        }
+
+        function htmlToPlainText(value) {
+            const raw = String(value == null ? '' : value);
+            if (!/<[a-zA-Z][^>]*>/.test(raw)) return raw.trim();
+            const node = document.createElement('div');
+            node.innerHTML = raw
+                .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+                .replace(/<br\s*\/?>/gi, '\n')
+                .replace(/<hr\s*\/?>/gi, '\n\n')
+                .replace(/<li\b[^>]*>/gi, '- ')
+                .replace(/<\/(p|div|h[1-6]|li|ul|ol)>/gi, '\n\n');
+            return node.textContent.replace(/\u00a0/g, ' ').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+        }
+
+        function stripPastedHtml(event) {
+            const pasted = event.clipboardData && event.clipboardData.getData('text/html');
+            const fallback = (event.clipboardData && event.clipboardData.getData('text/plain')) || '';
+            const source = pasted || fallback;
+            if (!source || !/<[a-zA-Z][^>]*>/.test(source)) return;
+            event.preventDefault();
+            const plain = htmlToPlainText(source);
+            const field = event.target;
+            const start = field.selectionStart;
+            const end = field.selectionEnd;
+            field.value = field.value.slice(0, start) + plain + field.value.slice(end);
+            field.selectionStart = field.selectionEnd = start + plain.length;
+        }
+
+        function renderProducts() {
+            const editing = editingProductId ? products.find(p => p.id === editingProductId) : null;
+            const form = '<div class="product-form"><h2 class="section-title">' + (editing ? 'Edit product copy' : 'New product') + '</h2>'
+                + '<p class="muted">Type descriptions as plain text. If you paste HTML from Wix or WooCommerce, HQ strips the tags automatically.</p>'
+                + '<label for="productName">Product name</label>'
+                + '<input class="text-input" id="productName" name="productName" autocomplete="off" placeholder="Toxic Cherry Bomb" value="' + escapeHtml(editing ? editing.name : '') + '">'
+                + '<label for="productShort">Short description</label>'
+                + '<textarea class="desc-textarea" id="productShort" name="productShort" rows="3" placeholder="What shoppers see first" onpaste="stripPastedHtml(event)">' + escapeHtml(editing ? editing.shortDescription : '') + '</textarea>'
+                + '<label for="productLong">Long Description / product details.</label>'
+                + '<textarea class="desc-textarea" id="productLong" name="productLong" rows="10" placeholder="Flavour, aroma, effects — write it like a person, not like HTML" onpaste="stripPastedHtml(event)">' + escapeHtml(editing ? editing.longDescription : '') + '</textarea>'
+                + '<p class="field-hint">Optional — can be polished later. Short description is what shoppers see first.</p>'
+                + '<div class="invite-row" style="margin-top:16px">'
+                + '<button class="btn-primary" type="button" onclick="saveProduct()">' + (editing ? 'Save copy' : 'Save product') + '</button>'
+                + (editing ? '<button class="btn-ghost" type="button" onclick="clearProductForm()">New product</button>' : '')
+                + '</div></div>';
+            if (!products.length) {
+                return form + '<div class="empty-state"><h3>No products yet</h3><p>Add Mohawk Medibles copy here in plain text. HTML will be converted on save.</p></div>';
+            }
+            const cards = products.map(function (product) {
+                return '<div class="panel-card"><div class="card-body"><div class="card-title">' + escapeHtml(product.name) + '</div><div class="muted"><span class="status-badge status-' + (product.status === 'active' ? 'approved' : 'staged') + '">' + escapeHtml(product.status) + '</span> · ' + escapeHtml(product.slug) + '</div><p class="why">' + escapeHtml(product.shortDescription || 'No short description') + '</p><div class="product-copy">' + escapeHtml(product.longDescription || 'No long description yet') + '</div></div><div class="card-actions"><button class="btn-small btn-approve" onclick="editProduct(\'' + product.id + '\')">Edit</button><button class="btn-small btn-reject" onclick="deleteProduct(\'' + product.id + '\')">Remove</button></div></div>';
+            }).join('');
+            return form + '<div class="card-grid">' + cards + '</div>';
+        }
+
+        function clearProductForm() {
+            editingProductId = null;
+            updateUI();
+        }
+
+        function editProduct(id) {
+            editingProductId = id;
+            currentTab = 'products';
+            updateUI();
+        }
+
+        async function saveProduct() {
+            const name = document.getElementById('productName').value.trim();
+            if (!name) {
+                showToast('Product name is required');
+                return;
+            }
+            const payload = {
+                name: name,
+                client: clientId(),
+                shortDescription: htmlToPlainText(document.getElementById('productShort').value),
+                longDescription: htmlToPlainText(document.getElementById('productLong').value),
+                status: 'active'
+            };
+            if (editingProductId) payload.id = editingProductId;
+            const data = await api('/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            showToast(data.success ? ('Saved ' + name + ' as plain text') : (data.error || 'Save failed'));
+            if (data.success) editingProductId = data.product && data.product.id;
+            await refreshAll();
+        }
+
+        async function deleteProduct(id) {
+            const data = await api('/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id, delete: true })
+            });
+            showToast(data.success ? 'Product removed' : (data.error || 'Remove failed'));
+            if (editingProductId === id) editingProductId = null;
+            await refreshAll();
         }
 
         function formatDate(iso) {

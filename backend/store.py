@@ -35,6 +35,7 @@ def _empty() -> dict[str, Any]:
         "logs": [],
         "incidents": {},
         "bridgeJobs": {},
+        "products": {},
     }
 
 
@@ -115,6 +116,7 @@ def _seed(data: dict[str, Any]) -> dict[str, Any]:
     data.setdefault("logs", [])
     data.setdefault("incidents", {})
     data.setdefault("bridgeJobs", {})
+    data.setdefault("products", {})
     return data
 
 

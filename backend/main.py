@@ -16,6 +16,7 @@ import functions_framework
 from flask import Flask, jsonify, request, send_from_directory
 
 import acquisition
+import catalog
 import gloris
 import team_ops
 from store import add_log, mutate, snapshot, utcnow
@@ -313,6 +314,7 @@ def root():
                 "tasks": len(data.get("tasks", {})),
                 "members": len(data.get("members", {})),
                 "incidents": len(data.get("incidents", {})),
+                "products": len(data.get("products", {})),
             },
         }
     )
@@ -428,6 +430,17 @@ def logs_route():
     return ok({"success": True, "logs": snapshot().get("logs", [])[:100]})
 
 
+@app.route("/products", methods=["GET", "POST", "OPTIONS"])
+def products_route():
+    if request.method == "OPTIONS":
+        return ("", 204, cors_headers())
+    body = json_body()
+    client = normalize_client(request.args.get("client") or body.get("client"))
+    if request.method == "POST":
+        return handle_product_write(body, client)
+    return ok({"success": True, "client": client, "products": catalog.list_products(client=client)})
+
+
 @app.route("/incidents", methods=["GET", "POST", "OPTIONS"])
 def incidents_route():
     if request.method == "OPTIONS":
@@ -519,6 +532,29 @@ def handle_task_status():
     return ok({"success": True, "task": task})
 
 
+def handle_product_write(body: dict, client: str):
+    if body.get("delete") or (body.get("status") or "").strip().lower() == "deleted":
+        product_id = body.get("id") or body.get("productId") or body.get("product_id")
+        if not product_id:
+            return ok({"success": False, "error": "id is required to delete"}, 400)
+        if not catalog.delete_product(str(product_id)):
+            return ok({"success": False, "error": "Product not found"}, 404)
+        return ok({"success": True, "deleted": True, "id": product_id})
+    try:
+        product = catalog.upsert_product(
+            name=body.get("name") or "",
+            client=client,
+            short_description=body.get("shortDescription") or body.get("short_description") or "",
+            long_description=body.get("longDescription") or body.get("long_description") or "",
+            product_id=body.get("id") or body.get("productId") or body.get("product_id"),
+            slug=body.get("slug"),
+            status=body.get("status") or "draft",
+        )
+    except ValueError as exc:
+        return ok({"success": False, "error": str(exc)}, 400)
+    return ok({"success": True, "product": product})
+
+
 def handle_action(action: str):
     action = action.strip().lower()
     if action in {"videos", "list-staging"}:
@@ -580,6 +616,12 @@ def handle_action(action: str):
         return ok({"success": True, "incidents": gloris.list_incidents()})
     if action in {"bridge"}:
         return ok({"success": True, "job": gloris.next_bridge_job(), "jobs": gloris.list_bridge_jobs()})
+    if action in {"product", "products"}:
+        body = json_body()
+        client = normalize_client(request.args.get("client") or body.get("client"))
+        if request.method == "POST":
+            return handle_product_write(body, client)
+        return ok({"success": True, "client": client, "products": catalog.list_products(client=client)})
     if action in {"logs"}:
         return ok({"success": True, "logs": snapshot().get("logs", [])[:100]})
     return ok({"success": False, "error": f"Unknown action: {action}"}, 404)

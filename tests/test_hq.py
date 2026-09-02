@@ -24,6 +24,8 @@ def test_admin_hq_is_served():
     assert "Invite member" in html
     assert "Gloris" in html
     assert "Incidents" in html
+    assert "Products" in html
+    assert "Long Description / product details." in html
     assert client().get("/favicon.ico").status_code == 204
 
 
