@@ -12,5 +12,6 @@ Open http://localhost:8080/admin
 - Staging / Approved: video HITL
 - Acquisition: lead outreach HITL
 - Team: members, roles, agent-drafted tasks
+- Products: Mohawk Medibles copy as plain text (HTML pasted from Wix is stripped on save)
 - Incidents: Gloris local diagnosis + Cursor Bridge (premium Codex/OpenAI is optional; 401 falls back locally)
 - Logs: HQ activity
